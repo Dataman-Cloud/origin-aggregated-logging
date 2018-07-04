@@ -6,8 +6,8 @@ ENV DATA_VERSION=1.6.0 \
     FLUENTD_VERSION=0.12.42 \
     GEM_HOME=/opt/app-root/src \
     HOME=/opt/app-root/src \
-    PATH=/opt/app-root/src/bin:/opt/app-root/bin:$PATH \
-    RUBY_VERSION=2.0 \
+    PATH=/opt/app-root/src/bin:/opt/app-root/bin:/opt/app-root/src/.rbenv/bin:/opt/app-root/src/.rbenv/plugins/ruby-build/bin:$PATH \
+    RUBY_VERSION=2.3.7 \
     OCP_OPERATIONS_PROJECTS='default openshift openshift-'
 
 LABEL io.k8s.description="Fluentd container for collecting of docker container logs" \
@@ -18,20 +18,25 @@ LABEL io.k8s.description="Fluentd container for collecting of docker container l
 # activesupport version 5.x requires ruby 2.2
 # iproute needed for ip command to get ip addresses
 # autoconf redhat-rpm-config for building jemalloc
-RUN rpmkeys --import file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 && \
-    yum install -y --setopt=tsflags=nodocs \
+
+RUN yum install -y --setopt=tsflags=nodocs \
       gcc-c++ \
-      ruby \
-      ruby-devel \
       libcurl-devel \
       make \
       bc \
       iproute \
       autoconf automake libtool m4 \
-      redhat-rpm-config && \
+      redhat-rpm-config \
+      which bzip2 git && \
     yum clean all
 
 RUN mkdir -p ${HOME} && mkdir -p /etc/fluent/plugin && \
+    git clone https://github.com/rbenv/rbenv.git ${HOME}/.rbenv && \
+    git clone https://github.com/rbenv/ruby-build.git ${HOME}/.rbenv/plugins/ruby-build && \
+    echo 'eval "$(rbenv init -)"' >> /etc/profile && source /etc/profile && \
+    cd ${HOME}/.rbenv && src/configure && make -C src && \
+    cd ${HOME}/.rbenv/plugins && PREFIX=/usr/local ./ruby-build/install.sh && \
+    rbenv install ${RUBY_VERSION} && rbenv install ${RUBY_VERSION}-devel && \
     gem install -N --conservative --minimal-deps --no-ri --no-doc \
      'activesupport:<5' \
      'public_suffix:<3' \
@@ -46,7 +51,8 @@ RUN mkdir -p ${HOME} && mkdir -p /etc/fluent/plugin && \
       fluent-plugin-secure-forward \
      'fluent-plugin-systemd:<0.1.0' \
       fluent-plugin-viaq_data_model \
-     'fluent-plugin-remote-syslog:1.1'
+     'fluent-plugin-remote-syslog:1.1' \
+     fluent-plugin-kafka
 
 ADD configs.d/ /etc/fluent/configs.d/
 ADD filter_k8s_meta_for_mux_client.rb /etc/fluent/plugin/
