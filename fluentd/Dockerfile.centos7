@@ -7,7 +7,7 @@ ENV DATA_VERSION=1.6.0 \
     GEM_HOME=/opt/app-root/src \
     HOME=/opt/app-root/src \
     PATH=/opt/app-root/src/bin:/opt/app-root/bin:/opt/app-root/src/.rbenv/bin:/opt/app-root/src/.rbenv/plugins/ruby-build/bin:$PATH \
-    RUBY_VERSION=2.3.7 \
+    RUBY_VERSION=2.3.0 \
     OCP_OPERATIONS_PROJECTS='default openshift openshift-'
 
 LABEL io.k8s.description="Fluentd container for collecting of docker container logs" \
@@ -27,7 +27,7 @@ RUN yum install -y --setopt=tsflags=nodocs \
       iproute \
       autoconf automake libtool m4 \
       redhat-rpm-config \
-      which bzip2 git && \
+      openssl-devel readline-devel zlib-devel bison which bzip2 git && \
     yum clean all
 
 RUN mkdir -p ${HOME} && mkdir -p /etc/fluent/plugin && \
@@ -36,7 +36,7 @@ RUN mkdir -p ${HOME} && mkdir -p /etc/fluent/plugin && \
     echo 'eval "$(rbenv init -)"' >> /etc/profile && source /etc/profile && \
     cd ${HOME}/.rbenv && src/configure && make -C src && \
     cd ${HOME}/.rbenv/plugins && PREFIX=/usr/local ./ruby-build/install.sh && \
-    rbenv install ${RUBY_VERSION} && rbenv install ${RUBY_VERSION}-devel && \
+    rbenv install ${RUBY_VERSION} && rbenv global ${RUBY_VERSION} && rbenv install ${RUBY_VERSION}-dev && \
     gem install -N --conservative --minimal-deps --no-ri --no-doc \
      'activesupport:<5' \
      'public_suffix:<3' \
