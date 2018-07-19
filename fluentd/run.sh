@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. /etc/profile
+
 export MERGE_JSON_LOG=${MERGE_JSON_LOG:-true}
 CFG_DIR=/etc/fluent/configs.d
 OCP_OPERATIONS_PROJECTS=${OCP_OPERATIONS_PROJECTS:-"default openshift openshift-"}
